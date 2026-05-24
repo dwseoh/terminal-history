@@ -2,6 +2,8 @@
 
 A shared terminal history + fuzzy Ctrl-R picker for bash and zsh. Press **Ctrl-R** to open an interactive history browser — type to filter, navigate with arrows, select with Enter.
 
+![terminal-history picker](assets/image.png)
+
 ## Requirements
 
 - Python 3 (standard library only — no extra packages needed)
