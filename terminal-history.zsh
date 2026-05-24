@@ -17,8 +17,9 @@ add-zsh-hook precmd _th_sync
 
 _th_picker_widget() {
     local tmpfile
-    tmpfile="$(mktemp -t th_picker.XXXXXX)" || return
-    fc -AI  # flush current session history
+    tmpfile="$(mktemp)" || return
+    fc -AI
+    zle -I  # invalidate ZLE display before curses takes over the terminal
     python3 "$_TH_PICKER" --query "$BUFFER" --output "$tmpfile"
     if [[ -s "$tmpfile" ]]; then
         BUFFER="$(<"$tmpfile")"

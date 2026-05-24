@@ -58,6 +58,13 @@ def highlight_spans(cmd: str, query: str) -> list[tuple[int, int]]:
     return spans
 
 
+C_HIGHLIGHT = 1   # yellow on default  — query matches in normal rows
+C_SELECTED  = 2   # black on cyan      — selected row background
+C_SEL_HI    = 3   # yellow on cyan     — query matches in selected row
+C_STATUSBAR = 4   # black on white     — status bar
+C_ARROW     = 5   # green on default   — prompt ">" arrow
+
+
 def draw(stdscr, query: str, matches: list[str], cursor: int, scroll: int) -> None:
     stdscr.erase()
     max_y, max_x = stdscr.getmaxyx()
@@ -74,11 +81,18 @@ def draw(stdscr, query: str, matches: list[str], cursor: int, scroll: int) -> No
     for i, cmd in enumerate(visible):
         y = i
         is_sel = (scroll + i) == cursor
-        attr = curses.A_REVERSE if is_sel else curses.A_NORMAL
         prefix = "> " if is_sel else "  "
         line = (prefix + cmd)[:max_x - 1]
+
+        if is_sel:
+            row_attr = curses.color_pair(C_SELECTED) | curses.A_BOLD
+            hi_attr  = curses.color_pair(C_SEL_HI)  | curses.A_BOLD
+        else:
+            row_attr = curses.A_NORMAL
+            hi_attr  = curses.color_pair(C_HIGHLIGHT) | curses.A_BOLD
+
         try:
-            stdscr.addstr(y, 0, line, attr)
+            stdscr.addstr(y, 0, line.ljust(max_x - 1), row_attr)
         except curses.error:
             pass
         for s, e in highlight_spans(cmd, query):
@@ -88,20 +102,21 @@ def draw(stdscr, query: str, matches: list[str], cursor: int, scroll: int) -> No
                 continue
             e2 = min(e2, max_x - 1)
             try:
-                stdscr.chgat(y, s2, e2 - s2, attr | curses.A_BOLD | curses.color_pair(1))
+                stdscr.chgat(y, s2, e2 - s2, hi_attr)
             except curses.error:
                 pass
 
-    status = f"  {len(matches)} matches  (Ctrl-N/P or arrows, Enter select, Esc cancel)"
+    status = f"  {len(matches)} matches    ↑↓ / Ctrl-P/N  ⏎ select  Esc cancel"
     try:
-        stdscr.addstr(max_y - 2, 0, status[:max_x - 1], curses.A_DIM)
+        stdscr.addstr(max_y - 2, 0, status[:max_x - 1].ljust(max_x - 1),
+                      curses.color_pair(C_STATUSBAR))
     except curses.error:
         pass
 
-    prompt = "> " + query
     try:
-        stdscr.addstr(max_y - 1, 0, prompt[:max_x - 1], curses.A_BOLD)
-        stdscr.move(max_y - 1, min(len(prompt), max_x - 1))
+        stdscr.addstr(max_y - 1, 0, "> ", curses.color_pair(C_ARROW) | curses.A_BOLD)
+        stdscr.addstr(max_y - 1, 2, query[:max_x - 3], curses.A_BOLD)
+        stdscr.move(max_y - 1, min(2 + len(query), max_x - 1))
     except curses.error:
         pass
 
@@ -111,7 +126,11 @@ def draw(stdscr, query: str, matches: list[str], cursor: int, scroll: int) -> No
 def run(stdscr, history: list[str], initial_query: str) -> str | None:
     curses.use_default_colors()
     try:
-        curses.init_pair(1, curses.COLOR_YELLOW, -1)
+        curses.init_pair(C_HIGHLIGHT, curses.COLOR_YELLOW, -1)
+        curses.init_pair(C_SELECTED,  curses.COLOR_BLACK,  curses.COLOR_CYAN)
+        curses.init_pair(C_SEL_HI,    curses.COLOR_YELLOW, curses.COLOR_CYAN)
+        curses.init_pair(C_STATUSBAR, curses.COLOR_BLACK,  curses.COLOR_WHITE)
+        curses.init_pair(C_ARROW,     curses.COLOR_GREEN,  -1)
     except curses.error:
         pass
     curses.curs_set(1)
