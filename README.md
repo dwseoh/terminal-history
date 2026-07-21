@@ -4,9 +4,7 @@ A shared terminal history + fuzzy Ctrl-R picker for bash and zsh. Press **Ctrl-R
 
 ![terminal-history picker](assets/image.png)
 
-## Requirements
-
-- Python 3 (standard library only — no extra packages needed)
+*requires Python 3+
 
 ## Install for zsh
 
